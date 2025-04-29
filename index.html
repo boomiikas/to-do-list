@@ -6,21 +6,40 @@
     <title>My To-Do List</title>
 </head>
 <body>
-    <cenetr>
     <h1>My Tasks</h1>
 
     <div id="input-area">
         <input type="text" id="new-task" placeholder="Add a new task">
         <button onclick="addTask()">Add</button>
     </div>
-    </cenetr>
+
     <ul id="task-list">
         </ul>
 
     <script>
-        // JavaScript code will go here later
         function addTask() {
-            alert("Add button clicked!"); // Just to test if the button works
+            // 1. Get the text from the input field
+            const taskText = document.getElementById('new-task').value;
+
+            // 2. Check if the input field is not empty
+            if (taskText.trim() !== "") {
+                // 3. Create a new list item (<li>) element
+                const listItem = document.createElement('li');
+
+                // 4. Set the text content of the list item to the task text
+                listItem.textContent = taskText;
+
+                // 5. Get the task list (<ul>) element
+                const taskList = document.getElementById('task-list');
+
+                // 6. Append the new list item to the task list
+                taskList.appendChild(listItem);
+
+                // 7. Clear the input field after adding the task
+                document.getElementById('new-task').value = '';
+            } else {
+                alert("Please enter a task!");
+            }
         }
     </script>
 </body>
