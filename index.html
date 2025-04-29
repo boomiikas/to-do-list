@@ -46,41 +46,80 @@
         </ul>
 
     <script>
+        const taskListElement = document.getElementById('task-list');
+        const newTaskInput = document.getElementById('new-task');
+        const LOCAL_STORAGE_KEY = 'myTodoList';
+
+        // Function to save tasks to local storage
+        function saveTasks() {
+            const tasks = [];
+            taskListElement.querySelectorAll('li').forEach(listItem => {
+                const taskSpan = listItem.querySelector('.task-text');
+                const isCompleted = taskSpan.classList.contains('completed');
+                tasks.push({ text: taskSpan.textContent, completed: isCompleted });
+            });
+            localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(tasks));
+        }
+
+        // Function to load tasks from local storage
+        function loadTasks() {
+            const storedTasks = localStorage.getItem(LOCAL_STORAGE_KEY);
+            if (storedTasks) {
+                const tasks = JSON.parse(storedTasks);
+                tasks.forEach(task => {
+                    addTaskToUI(task.text, task.completed);
+                });
+            }
+        }
+
+        // Function to add a task to the UI (called when adding new or loading)
+        function addTaskToUI(taskText, isCompleted = false) {
+            const listItem = document.createElement('li');
+            listItem.classList.add('task-item');
+
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.checked = isCompleted;
+            checkbox.onchange = function() {
+                taskSpan.classList.toggle('completed');
+                saveTasks(); // Save when the completion status changes
+            };
+
+            const taskSpan = document.createElement('span');
+            taskSpan.classList.add('task-text');
+            taskSpan.textContent = taskText;
+            if (isCompleted) {
+                taskSpan.classList.add('completed');
+            }
+
+            const deleteButton = document.createElement('button');
+            deleteButton.textContent = 'Delete';
+            deleteButton.classList.add('delete-button');
+            deleteButton.onclick = function() {
+                listItem.remove();
+                saveTasks(); // Save when a task is deleted
+            };
+
+            listItem.appendChild(checkbox);
+            listItem.appendChild(taskSpan);
+            listItem.appendChild(deleteButton);
+
+            taskListElement.appendChild(listItem);
+        }
+
         function addTask() {
-            const taskText = document.getElementById('new-task').value;
+            const taskText = newTaskInput.value;
             if (taskText.trim() !== "") {
-                const listItem = document.createElement('li');
-                listItem.classList.add('task-item');
-
-                const checkbox = document.createElement('input');
-                checkbox.type = 'checkbox';
-                checkbox.onchange = function() {
-                    taskSpan.classList.toggle('completed');
-                };
-
-                const taskSpan = document.createElement('span');
-                taskSpan.classList.add('task-text');
-                taskSpan.textContent = taskText;
-
-                const deleteButton = document.createElement('button');
-                deleteButton.textContent = 'Delete';
-                deleteButton.classList.add('delete-button');
-                deleteButton.onclick = function() {
-                    listItem.remove();
-                };
-
-                listItem.appendChild(checkbox);
-                listItem.appendChild(taskSpan);
-                listItem.appendChild(deleteButton);
-
-                const taskList = document.getElementById('task-list');
-                taskList.appendChild(listItem);
-
-                document.getElementById('new-task').value = '';
+                addTaskToUI(taskText);
+                newTaskInput.value = '';
+                saveTasks(); // Save when a new task is added
             } else {
                 alert("Please enter a task!");
             }
         }
+
+        // Load tasks when the page loads
+        loadTasks();
     </script>
 </body>
 </html>
