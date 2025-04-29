@@ -11,6 +11,10 @@
             align-items: center;
             padding: 8px 0;
             border-bottom: 1px solid #eee;
+            transition: opacity 0.3s ease;
+        }
+        .task-item.removing {
+            opacity: 0;
         }
         .delete-button {
             background-color: #f44336;
@@ -24,6 +28,15 @@
             cursor: pointer;
             border-radius: 3px;
         }
+        .clear-completed {
+            background-color: #888;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            margin-top: 10px;
+            cursor: pointer;
+            border-radius: 3px;
+        }
         .task-text {
             flex-grow: 1;
             margin-left: 8px;
@@ -32,25 +45,56 @@
             text-decoration: line-through;
             color: #888;
         }
+        #input-area {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        #new-task {
+            flex-grow: 1;
+            padding: 8px;
+        }
+        #task-counter-area {
+            margin: 10px 0;
+        }
     </style>
 </head>
 <body>
     <h1>My Tasks</h1>
 
     <div id="input-area">
-        <input type="text" id="new-task" placeholder="Add a new task">
-        <button onclick="addTask()">Add</button>
+        <input type="text" id="new-task" placeholder="Add a new task" aria-label="New task input">
+        <button onclick="addTask()" aria-label="Add task">Add</button>
     </div>
 
-    <ul id="task-list">
-        </ul>
+    <div id="task-counter-area">
+        Tasks remaining: <span id="task-counter">0</span>
+    </div>
 
-   <script>
+    <ul id="task-list"></ul>
+
+    <button class="clear-completed" onclick="clearCompleted()">Clear Completed</button>
+
+    <script>
         const taskListElement = document.getElementById('task-list');
         const newTaskInput = document.getElementById('new-task');
+        const taskCounter = document.getElementById('task-counter');
         const LOCAL_STORAGE_KEY = 'myTodoList';
 
-        // Function to save tasks to local storage
+        // Sanitize input to prevent XSS
+        function sanitizeInput(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Update task counter
+        function updateTaskCounter() {
+            const count = taskListElement.querySelectorAll('li:not(.completed)').length;
+            taskCounter.textContent = count;
+        }
+
+        // Save tasks to local storage
         function saveTasks() {
             const tasks = [];
             taskListElement.querySelectorAll('li').forEach(listItem => {
@@ -59,9 +103,10 @@
                 tasks.push({ text: taskSpan.textContent, completed: isCompleted });
             });
             localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(tasks));
+            updateTaskCounter();
         }
 
-        // Function to load tasks from local storage
+        // Load tasks from local storage
         function loadTasks() {
             const storedTasks = localStorage.getItem(LOCAL_STORAGE_KEY);
             if (storedTasks) {
@@ -70,9 +115,10 @@
                     addTaskToUI(task.text, task.completed);
                 });
             }
+            updateTaskCounter();
         }
 
-        // Function to add a task to the UI (called when adding new or loading)
+        // Add task to UI
         function addTaskToUI(taskText, isCompleted = false) {
             const listItem = document.createElement('li');
             listItem.classList.add('task-item');
@@ -80,24 +126,50 @@
             const checkbox = document.createElement('input');
             checkbox.type = 'checkbox';
             checkbox.checked = isCompleted;
+            checkbox.setAttribute('aria-label', 'Mark task as completed');
             checkbox.onchange = function() {
                 taskSpan.classList.toggle('completed');
-                saveTasks(); // Save when the completion status changes
+                saveTasks();
             };
 
             const taskSpan = document.createElement('span');
             taskSpan.classList.add('task-text');
-            taskSpan.textContent = taskText;
+            taskSpan.textContent = sanitizeInput(taskText);
             if (isCompleted) {
                 taskSpan.classList.add('completed');
             }
 
+            // Enable task editing on double-click
+            taskSpan.ondblclick = function() {
+                const input = document.createElement('input');
+                input.type = 'text';
+                input.value = taskSpan.textContent;
+                input.setAttribute('aria-label', 'Edit task');
+                input.onblur = function() {
+                    const newText = input.value.trim();
+                    taskSpan.textContent = newText ? sanitizeInput(newText) : taskSpan.textContent;
+                    input.replaceWith(taskSpan);
+                    saveTasks();
+                };
+                input.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') {
+                        input.blur();
+                    }
+                });
+                taskSpan.replaceWith(input);
+                input.focus();
+            };
+
             const deleteButton = document.createElement('button');
             deleteButton.textContent = 'Delete';
             deleteButton.classList.add('delete-button');
+            deleteButton.setAttribute('aria-label', 'Delete task');
             deleteButton.onclick = function() {
-                listItem.remove();
-                saveTasks(); // Save when a task is deleted
+                listItem.classList.add('removing');
+                setTimeout(() => {
+                    listItem.remove();
+                    saveTasks();
+                }, 300);
             };
 
             listItem.appendChild(checkbox);
@@ -107,18 +179,37 @@
             taskListElement.appendChild(listItem);
         }
 
+        // Add new task
         function addTask() {
             const taskText = newTaskInput.value;
             if (taskText.trim() !== "") {
                 addTaskToUI(taskText);
                 newTaskInput.value = '';
-                saveTasks(); // Save when a new task is added
+                saveTasks();
             } else {
                 alert("Please enter a task!");
             }
         }
 
-        // Load tasks when the page loads
+        // Clear all completed tasks
+        function clearCompleted() {
+            taskListElement.querySelectorAll('.completed').forEach(completedTask => {
+                completedTask.closest('li').classList.add('removing');
+                setTimeout(() => {
+                    completedTask.closest('li').remove();
+                    saveTasks();
+                }, 300);
+            });
+        }
+
+        // Add Enter key support
+        newTaskInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                addTask();
+            }
+        });
+
+        // Load tasks on page load
         loadTasks();
     </script>
 </body>
