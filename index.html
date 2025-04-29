@@ -4,9 +4,29 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>My To-Do List</title>
+    <style>
+        .task-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid #eee;
+        }
+        .delete-button {
+            background-color: #f44336;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 14px;
+            cursor: pointer;
+            border-radius: 3px;
+        }
+    </style>
 </head>
-<body style="background-image: url('https://img.freepik.com/free-vector/abstract-black-lines-geometric-background_677411-2748.jpg'); background-size: cover; background-position: center; background-repeat: no-repeat; color: aliceblue; line-height: 1.6; max-width: 800px; margin: auto; padding: 20px;font-style: italic">
-
+<body>
     <h1>My Tasks</h1>
 
     <div id="input-area">
@@ -19,24 +39,27 @@
 
     <script>
         function addTask() {
-            // 1. Get the text from the input field
             const taskText = document.getElementById('new-task').value;
-
-            // 2. Check if the input field is not empty
             if (taskText.trim() !== "") {
-                // 3. Create a new list item (<li>) element
                 const listItem = document.createElement('li');
+                listItem.classList.add('task-item'); // Add a class for styling
 
-                // 4. Set the text content of the list item to the task text
-                listItem.textContent = taskText;
+                const taskSpan = document.createElement('span');
+                taskSpan.textContent = taskText;
 
-                // 5. Get the task list (<ul>) element
+                const deleteButton = document.createElement('button');
+                deleteButton.textContent = 'Delete';
+                deleteButton.classList.add('delete-button'); // Add a class for styling
+                deleteButton.onclick = function() {
+                    listItem.remove(); // Remove the entire list item when clicked
+                };
+
+                listItem.appendChild(taskSpan);
+                listItem.appendChild(deleteButton);
+
                 const taskList = document.getElementById('task-list');
-
-                // 6. Append the new list item to the task list
                 taskList.appendChild(listItem);
 
-                // 7. Clear the input field after adding the task
                 document.getElementById('new-task').value = '';
             } else {
                 alert("Please enter a task!");
